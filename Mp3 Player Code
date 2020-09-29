@@ -1,0 +1,215 @@
+Program Code:
+
+from tkinter import *
+import pygame  #use this library for playing music you need to install it
+import os  # to access the operating system files/folders
+from tkinter import filedialog  # it is use to access the file from your system
+import tkinter.messagebox as tmsg # to show message box
+import time # use this module to get time of the song.
+
+pygame.mixer.init()
+#dir = os.chdir("C:/Users/Burhan Derwch/Desktop/Songs")  # change the current directory with given directory
+#currentDir = os.listdir(dir) #list of directory
+pause = False
+stopped = False
+playlist = [] #store songs name from the directory
+
+def click(event):
+    global pause
+    global stopped
+    if event.widget == playBtn: # when play button clicked
+        if lbx.size() > 0:
+            # global pause
+            if pause:
+                pygame.mixer.music.unpause()
+                statusVar.set("Resume")
+                statusLabel.update()
+            else:
+                stopped = False
+                selectSong = lbx.curselection() # Return a number of selected song
+                selectSong = selectSong[0]  # select the song number in the list which clicked
+                playSong = playlist[selectSong] # current song number in playlist
+                pygame.mixer.music.load(playSong)
+                pygame.mixer.music.play()
+                songName(os.path.basename(playSong))
+                statusVar.set("Music Playing..")
+                statusLabel.update()
+                songDuration()
+        else:
+            tmsg.showinfo("Play Info", "Please add songs and then play it")
+
+    elif event.widget == nextBtn:  # when next button clicked
+        try:
+            if lbx.size() > 0:
+                nextSongIndex = lbx.curselection()
+                nextSongIndex = nextSongIndex[0] + 1
+                nextSong = playlist[nextSongIndex]
+                songName(os.path.basename(nextSong))
+                pygame.mixer.music.load(nextSong)
+                pygame.mixer.music.play()
+                # Select the next songs and bar move to next song
+                lbx.selection_clear(0, END) # clear the all songs which are playing
+                lbx.activate(nextSongIndex) # activate the bar for new song
+                lbx.selection_set(nextSongIndex,last=None) # active the bar on next song
+                statusVar.set("Next")
+                statusLabel.update()
+                songDuration()
+        except IndexError as ie:
+            tmsg.showinfo("Next Info", "Add more songs in the playlist for select next songs")
+
+    elif event.widget == previousBtn:  # when previous button clicked
+       try:
+           if lbx.size() > 0:
+                previouSongIndex = lbx.curselection()
+                previousSongIndex = previouSongIndex[0] - 1
+                previousSong = playlist[previousSongIndex]
+                songName(os.path.basename(previousSong))
+                pygame.mixer.music.load(previousSong)
+                pygame.mixer.music.play()
+
+                # Select the next songs and bar move to next song
+                lbx.selection_clear(0, END)  # clear the all songs which are playing
+                lbx.activate(previousSongIndex)  # activate the bar for new song
+                lbx.selection_set(previousSongIndex, last=None)  # active the bar on next song
+                statusVar.set("Previous")
+                statusLabel.update()
+                songDuration()
+       except:
+           tmsg.showinfo("Previous Info", "Add songs in playlist to select previous song")
+
+    elif event.widget == pauseBtn:  # when pause button clicked
+        # global pause
+        pause = True
+        pygame.mixer.music.pause()
+        statusVar.set("Song Pause")
+        statusLabel.update()
+        songDuration()
+
+
+    elif event.widget == stopBtn:
+        stopped = True
+        pygame.mixer.music.stop()
+        statusVar.set("Songs Stopped")
+        statusLabel.update()
+        durationLabel.config(text=f"Song Duration: 00:00")
+
+# Songs time duration
+def songDuration():
+    songTime = pygame.mixer.music.get_pos()/1000  # get the current song time
+    convertSongTime = time.strftime("%M:%S", time.gmtime(songTime))
+    durationLabel.config(text=f"Song Duration: {convertSongTime}")  # show the time on status bar
+    durationLabel.after(1000, songDuration)  # update the song time during playing
+
+
+# Song Title Function
+def songName(string):
+    labelValue.set(f"Song: {string}")
+
+# Delete Function
+def delete():
+     if lbx.size()>0:
+        delSong = lbx.curselection() # Return a number of selected song
+        delSong = delSong[0] # select the song number in the list which clicked
+        lbx.delete(delSong) # delete the selected song
+    else:
+        tmsg.showinfo("Delete Info", "Playlist is empty")
+
+# File browse and songs insert into list box Function
+def browseFile():
+    global filePath
+    filePath = filedialog.askopenfilename()  # open the songs file and Give full path of selected song.
+    file = os.path.basename(filePath)  # Give  only name of the song not full path
+    index = 0
+    lbx.insert(index, file)  # insert the songs into listbox with their names not full path
+    playlist.insert(index, filePath)  # insert only the songs name not full path into playlist
+    index += 1
+def help():
+    tmsg.showinfo("Help", "In this Mp3 player have only implement some basic functionalities if you want to add more then add it"
+                          "you need any help then contact us: 'everythingfree33@gmail.com'   ")
+
+# GUI Part
+root = Tk()
+root.geometry("500x450")
+root.title("Music Player")
+# The icon of the program
+root.wm_iconbitmap("G:/Python/pythonTkinter/title.ico")
+
+# Buttons Images give your image path here
+playimage = PhotoImage(file="G:/Python/pythonTkinter/play.png")
+nextimage = PhotoImage(file="G:/Python/pythonTkinter/forward.png")
+previousimage = PhotoImage(file="G:/Python/pythonTkinter/rewind.png")
+stopimage = PhotoImage(file="G:/Python/pythonTkinter/stop.png")
+pauseimage = PhotoImage(file="G:/Python/pythonTkinter/pause.png")
+
+# Menu Bar
+menuBar = Menu(root,bg="white")
+# File Menu
+fileMenu = Menu(menuBar, tearoff=0)
+fileMenu.add_command(label="Add Songs", command=browseFile)
+fileMenu.add_command(label="Exit", command=quit)
+root.config(menu=menuBar)
+menuBar.add_cascade(label="File", menu=fileMenu)
+
+#Help Menu
+helpMenu = Menu(menuBar, tearoff=0)
+helpMenu.add_command(label="About Us")
+helpMenu.add_command(label="Help",command=help)
+root.config(menu=menuBar)
+menuBar.add_cascade(label="Help", menu=helpMenu)
+
+# Song labels
+labelValue = StringVar()
+labelValue.set("")
+nameLabel = Label(root,textvariable=labelValue,font="calibri 10 bold")
+nameLabel.pack(anchor="nw",pady=20,fill=BOTH)
+
+# Song Duration labels
+durationLabel = Label(root,text="Song Duration",font="calibri 10 bold")
+durationLabel.pack(fill=BOTH)
+
+# Status-Bar label
+statusVar = StringVar()
+statusVar.set("")
+statusLabel = Label(root, textvariable=statusVar,relief=SUNKEN, anchor="w",font="calibri 12 bold")
+statusLabel.pack(side=BOTTOM,fill=X)
+
+# buttonFrame
+buttonFrame = Frame(root,bg="light cyan",relief=SUNKEN)
+#Next Button
+nextBtn = Button(buttonFrame, text="", padx=30, pady=20,relief=GROOVE, image=nextimage)
+nextBtn.pack(side=RIGHT,padx=5, pady=5,fill=BOTH)
+nextBtn.bind("<Button-1>", click)
+#Previous Button
+previousBtn = Button(buttonFrame, text="", padx=30, pady=20,relief=GROOVE, image=previousimage)
+previousBtn.pack(side=RIGHT,padx=5, pady=5,fill=BOTH)
+previousBtn.bind("<Button-1>", click)
+
+#Pause Button
+pauseBtn = Button(buttonFrame, text="", padx=30, pady=20,relief=GROOVE, image=pauseimage)
+pauseBtn.pack(side=RIGHT,padx=5, pady=5,fill=BOTH)
+pauseBtn.bind("<Button-1>", click)
+
+#Stop Button
+stopBtn = Button(buttonFrame, text="", padx=30, pady=20,relief=GROOVE, image=stopimage)
+stopBtn.pack(side=RIGHT,padx=5, pady=5,fill=BOTH)
+stopBtn.bind("<Button-1>", click)
+
+#Play Button
+playBtn = Button(buttonFrame, text="", padx=30, pady=20,relief=GROOVE, image=playimage)
+playBtn.pack(side=RIGHT,padx=5, pady=5,fill=BOTH)
+playBtn.bind("<Button-1>", click)
+buttonFrame.pack(side=BOTTOM)
+
+#ListBox Frame
+listboxFrame = Frame(root,relief=SUNKEN)
+scrollbar = Scrollbar(listboxFrame)
+scrollbar.pack(side=RIGHT,fill=Y)
+lbx = Listbox(listboxFrame, width=50,yscrollcommand=scrollbar.set, height=10, font="calibri 12 bold")
+lbx.pack(fill=BOTH)
+addBtn = Button(listboxFrame, padx=20, text="Add",bg="light cyan",relief=GROOVE,font="calibri 12 bold",command=browseFile)
+addBtn.pack(side=LEFT,padx=100,pady=10)
+delBtn = Button(listboxFrame, padx=10, text="Delete",bg="light cyan",relief=GROOVE,font="calibri 12 bold",command=delete)
+delBtn.pack(side=LEFT,pady=10)
+listboxFrame.pack()
+
+root.mainloop()
